@@ -1,38 +1,43 @@
 import { useEffect, useRef, useState } from "react";
 
 function App() {
-  let letters = [];
+  const [letters, setLetters] = useState([]);
   const [word, setWord] = useState(letters);
   const [value, setValue] = useState("");
   const random = Math.floor(Math.random() * (15 - 5) + 5);
-  let wrongGuesses = 0;
+  const [wrongGuess, setWrongGuess] = useState(0);
   const letterRefs = useRef([]);
   const svgRefs = useRef([]);
+
+  // fetch the word
+  const fetchWord = async () => {
+    await fetch(`https://random-word-api.herokuapp.com/word?length=${random}`)
+      .then((response) => response.json())
+      .then((data) => {
+        setWord(data[0]); // Assuming the API returns an array with one word
+      });
+  };
 
   useEffect(() => {
     fetchWord();
   }, []);
-  // fetch the word
-  const fetchWord = async () => {
-    await fetch(`https://random-word-api.herokuapp.com/word?length=${random}`)
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        setWord(data);
-      });
-  };
 
-  const letterCount = () => {
-    for (let i = 0; i < random; i++) {
-      letters.push(word.toString().charAt(i));
-
-      console.log(letters);
+  useEffect(() => {
+    const letterCount = () => {
+      let letters = [];
+      for (let i = 0; i < random; i++) {
+        letters.push(word.toString().charAt(i));
+      }
+      setLetters(letters);
+    };
+    if (word !== "") {
+      letterCount();
     }
-  };
-  letterCount();
+  }, [word]);
 
   const checkLetter = () => {
+    let newWrongGuess = wrongGuess;
+
     letters.forEach((letter, index) => {
       if (letter === value) {
         letterRefs.current[index].classList.remove("hidden");
@@ -40,13 +45,15 @@ function App() {
     });
 
     if (!letters.includes(value)) {
-      wrongGuesses++;
-      svgRefs.current[wrongGuesses].classList.remove("hidden");
+      newWrongGuess++;
+      svgRefs.current[newWrongGuess]?.classList.remove("hidden");
 
-      if (wrongGuesses >= 10) {
+      if (wrongGuess >= 10) {
         console.log("verloren");
       }
     }
+
+    setWrongGuess(newWrongGuess);
   };
 
   return (
@@ -79,6 +86,7 @@ function App() {
           })}
         </div>
       </div>
+      {wrongGuess >= 10 && <h2 className="">Verloren</h2>}
       <div>
         <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
           <g>
